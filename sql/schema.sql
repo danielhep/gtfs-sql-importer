@@ -101,7 +101,7 @@ CREATE TABLE timepoints (
 );
 
 CREATE TABLE calendar (
-  feed_index integer not null,
+  feed_index integer REFERENCES feed_info (feed_index) ON DELETE CASCADE,
   service_id text,
   monday int not null,
   tuesday int not null,
@@ -112,14 +112,12 @@ CREATE TABLE calendar (
   sunday int not null,
   start_date date not null,
   end_date date not null,
-  CONSTRAINT calendar_pkey PRIMARY KEY (feed_index, service_id),
-  CONSTRAINT calendar_feed_fkey FOREIGN KEY (feed_index)
-    REFERENCES feed_info (feed_index) ON DELETE CASCADE
+  CONSTRAINT calendar_pkey PRIMARY KEY (feed_index, service_id)
 );
 CREATE INDEX calendar_service_id ON calendar (service_id);
 
 CREATE TABLE stops (
-  feed_index int not null,
+  feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
   stop_id text,
   stop_name text default null,
   stop_desc text default null,
@@ -144,6 +142,8 @@ CREATE TABLE stops (
   vehicle_type int default null,
   platform_code text default null,
   CONSTRAINT stops_pkey PRIMARY KEY (feed_index, stop_id)
+  -- CONSTRAINT stops_feed_fkey FOREIGN KEY (feed_index)
+  --   REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
 SELECT AddGeometryColumn(:'schema', 'stops', 'the_geom', 4326, 'POINT', 2);
 
@@ -165,7 +165,7 @@ CREATE TABLE route_types (
 );
 
 CREATE TABLE routes (
-  feed_index int not null,
+  feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
   route_id text,
   agency_id text,
   route_short_name text default '',
@@ -179,18 +179,14 @@ CREATE TABLE routes (
   route_sort_order integer default null,
   CONSTRAINT routes_pkey PRIMARY KEY (feed_index, route_id),
   CONSTRAINT routes_fkey FOREIGN KEY (feed_index, agency_id)
-    REFERENCES agency (feed_index, agency_id),
-  CONSTRAINT routes_feed_fkey FOREIGN KEY (feed_index)
-    REFERENCES feed_info (feed_index) ON DELETE CASCADE
+    REFERENCES agency (feed_index, agency_id)
 );
 
 CREATE TABLE calendar_dates (
-  feed_index int not null,
+  feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
   service_id text,
   date date not null,
-  exception_type int REFERENCES exception_types(exception_type),
-  CONSTRAINT calendar_fkey FOREIGN KEY (feed_index, service_id)
-    REFERENCES calendar (feed_index, service_id) ON DELETE CASCADE
+  exception_type int REFERENCES exception_types(exception_type)
 );
 
 CREATE INDEX calendar_dates_dateidx ON calendar_dates (date);
@@ -201,7 +197,7 @@ CREATE TABLE payment_methods (
 );
 
 CREATE TABLE fare_attributes (
-  feed_index int not null,
+  feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
   fare_id text not null,
   price double precision not null,
   currency_type text not null,
@@ -212,13 +208,11 @@ CREATE TABLE fare_attributes (
   agency_id text default null,
   CONSTRAINT fare_attributes_pkey PRIMARY KEY (feed_index, fare_id),
   CONSTRAINT fare_attributes_fkey FOREIGN KEY (feed_index, agency_id)
-  REFERENCES agency (feed_index, agency_id),
-  CONSTRAINT fare_attributes_fare_fkey FOREIGN KEY (feed_index)
-    REFERENCES feed_info (feed_index) ON DELETE CASCADE
+  REFERENCES agency (feed_index, agency_id)
 );
 
 CREATE TABLE fare_rules (
-  feed_index int not null,
+  feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
   fare_id text,
   route_id text,
   origin_id text,
@@ -231,13 +225,11 @@ CREATE TABLE fare_rules (
   CONSTRAINT fare_rules_fare_id_fkey FOREIGN KEY (feed_index, fare_id)
   REFERENCES fare_attributes (feed_index, fare_id),
   CONSTRAINT fare_rules_route_id_fkey FOREIGN KEY (feed_index, route_id)
-  REFERENCES routes (feed_index, route_id),
-  CONSTRAINT fare_rules_service_feed_fkey FOREIGN KEY (feed_index)
-    REFERENCES feed_info (feed_index) ON DELETE CASCADE
+  REFERENCES routes (feed_index, route_id)
 );
 
 CREATE TABLE shapes (
-  feed_index int not null,
+  feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
   shape_id text not null,
   shape_pt_lat double precision not null,
   shape_pt_lon double precision not null,
