@@ -142,8 +142,6 @@ CREATE TABLE stops (
   vehicle_type int default null,
   platform_code text default null,
   CONSTRAINT stops_pkey PRIMARY KEY (feed_index, stop_id)
-  -- CONSTRAINT stops_feed_fkey FOREIGN KEY (feed_index)
-  --   REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
 SELECT AddGeometryColumn(:'schema', 'stops', 'the_geom', 4326, 'POINT', 2);
 
