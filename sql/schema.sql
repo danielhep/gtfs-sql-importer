@@ -327,6 +327,7 @@ CREATE TABLE stop_times (
   pickup_type int REFERENCES pickup_dropoff_types(type_id),
   drop_off_type int REFERENCES pickup_dropoff_types(type_id),
   shape_dist_traveled numeric(10, 2),
+  dist_from_previous numeric(10, 2),
   timepoint int REFERENCES timepoints (timepoint),
 
   -- unofficial features
@@ -426,6 +427,34 @@ CREATE OR REPLACE FUNCTION dist_update()
 DROP TRIGGER IF EXISTS stop_times_dist_stmt_trigger ON stop_times;
 CREATE TRIGGER stop_times_dist_stmt_trigger AFTER INSERT ON stop_times
   FOR EACH STATEMENT EXECUTE PROCEDURE dist_update();
+
+-- Add dist_from_previous fields.
+CREATE OR REPLACE FUNCTION dist_from_previous_update()
+  RETURNS TRIGGER AS $$
+  BEGIN
+  WITH f AS (SELECT MAX(feed_index) AS feed_index FROM feed_info)
+  UPDATE stop_times s
+    SET dist_from_previous = shape_dist_traveled - lag::numeric
+  FROM
+    (
+      SELECT
+        feed_index,
+        stop_id,
+        trip_id,
+        coalesce(lag(shape_dist_traveled) over (trip), 0) AS lag
+      FROM stop_times
+        INNER JOIN f USING (feed_index)
+      WINDOW trip AS (PARTITION BY feed_index, trip_id ORDER BY stop_sequence)
+    ) AS d
+  WHERE (s.feed_index, s.trip_id, s.stop_id) = (d.feed_index, d.trip_id, d.stop_id);
+  RETURN NULL;
+  END;
+  $$ LANGUAGE plpgsql
+  SET search_path = :schema, public;
+
+DROP TRIGGER IF EXISTS dist_from_previous_trigger ON stop_times;
+CREATE TRIGGER dist_from_previous_trigger AFTER INSERT ON stop_times
+  FOR EACH STATEMENT EXECUTE PROCEDURE dist_from_previous_update();
 
 CREATE TABLE frequencies (
   feed_index int not null,
