@@ -173,10 +173,8 @@ CREATE TABLE routes (
   -- unofficial
   route_sort_order integer default null,
   CONSTRAINT routes_pkey PRIMARY KEY (feed_index, route_id),
-  -- CONSTRAINT routes_fkey FOREIGN KEY (feed_index, agency_id)
-  --   REFERENCES agency (feed_index, agency_id),
-  CONSTRAINT routes_feed_fkey FOREIGN KEY (feed_index)
-    REFERENCES feed_info (feed_index) ON DELETE CASCADE
+  CONSTRAINT routes_fkey FOREIGN KEY (feed_index, agency_id)
+    REFERENCES agency (feed_index, agency_id) ON DELETE CASCADE
 );
 
 CREATE TABLE calendar_dates (
@@ -184,6 +182,7 @@ CREATE TABLE calendar_dates (
   service_id text,
   date date not null,
   exception_type int REFERENCES exception_types(exception_type) --,
+  -- Recommended implmentation: Every service_id in this table references one in calendar table
   -- CONSTRAINT calendar_fkey FOREIGN KEY (feed_index, service_id)
     -- REFERENCES calendar (feed_index, service_id)
 );
@@ -206,10 +205,8 @@ CREATE TABLE fare_attributes (
   -- unofficial features
   agency_id text default null,
   CONSTRAINT fare_attributes_pkey PRIMARY KEY (feed_index, fare_id),
-  -- CONSTRAINT fare_attributes_fkey FOREIGN KEY (feed_index, agency_id)
-  -- REFERENCES agency (feed_index, agency_id),
-  CONSTRAINT fare_attributes_fare_fkey FOREIGN KEY (feed_index)
-    REFERENCES feed_info (feed_index) ON DELETE CASCADE
+  CONSTRAINT fare_attributes_fkey FOREIGN KEY (feed_index, agency_id)
+    REFERENCES agency (feed_index, agency_id) ON DELETE CASCADE
 );
 
 CREATE TABLE fare_rules (
@@ -219,16 +216,15 @@ CREATE TABLE fare_rules (
   origin_id text,
   destination_id text,
   contains_id text,
+  CONSTRAINT fare_rules_route_id_fkey FOREIGN KEY (feed_index, route_id)
+    REFERENCES routes (feed_index, route_id),
+  CONSTRAINT fare_rules_fare_id_fkey FOREIGN KEY (feed_index, fare_id)
+    REFERENCES fare_attributes (feed_index, fare_id),
   -- unofficial features
-  service_id text default null,
+  service_id text default null
+  -- only enable this constraint if you are using the calendar_dates -> calendar reference mentioned above
   -- CONSTRAINT fare_rules_service_fkey FOREIGN KEY (feed_index, service_id)
-  -- REFERENCES calendar (feed_index, service_id),
-  -- CONSTRAINT fare_rules_fare_id_fkey FOREIGN KEY (feed_index, fare_id)
-  -- REFERENCES fare_attributes (feed_index, fare_id),
-  -- CONSTRAINT fare_rules_route_id_fkey FOREIGN KEY (feed_index, route_id)
-  -- REFERENCES routes (feed_index, route_id),
-  CONSTRAINT fare_rules_service_feed_fkey FOREIGN KEY (feed_index)
-    REFERENCES feed_info (feed_index) ON DELETE CASCADE
+  --   REFERENCES calendar (feed_index, service_id)
 );
 
 CREATE TABLE shapes (
@@ -283,7 +279,7 @@ CREATE TABLE shape_geoms (
 SELECT AddGeometryColumn(:'schema', 'shape_geoms', 'the_geom', 4326, 'LINESTRING', 2);
 
 CREATE TABLE trips (
-  feed_index int not null,
+  feed_index int REFERENCES feed_info(feed_index) ON DELETE CASCADE,
   route_id text not null,
   service_id text not null,
   trip_id text not null,
@@ -294,19 +290,18 @@ CREATE TABLE trips (
   trip_short_name text,
   wheelchair_accessible int REFERENCES wheelchair_accessible(wheelchair_accessible),
 
+  CONSTRAINT trips_route_id_fkey FOREIGN KEY (feed_index, route_id)
+    REFERENCES routes (feed_index, route_id),
   -- unofficial features
   direction text default null,
   schd_trip_id text default null,
   trip_type text default null,
   exceptional int default null,
   bikes_allowed int default null,
-  CONSTRAINT trips_pkey PRIMARY KEY (feed_index, trip_id),
-  -- CONSTRAINT trips_route_id_fkey FOREIGN KEY (feed_index, route_id)
-  -- REFERENCES routes (feed_index, route_id),
+  CONSTRAINT trips_pkey PRIMARY KEY (feed_index, trip_id)
+  -- only enable this constraint if you are using the calendar_dates -> calendar reference mentioned above
   -- CONSTRAINT trips_calendar_fkey FOREIGN KEY (feed_index, service_id)
-  -- REFERENCES calendar (feed_index, service_id),
-  CONSTRAINT trips_feed_fkey FOREIGN KEY (feed_index)
-    REFERENCES feed_info (feed_index) ON DELETE CASCADE
+  -- REFERENCES calendar (feed_index, service_id)
 );
 
 CREATE INDEX trips_trip_id ON trips (trip_id);

@@ -48,4 +48,4 @@ truncate:
 init: sql/schema.sql
 	$(psql) -f $<
 	$(psql) -c "\copy $(SCHEMA).route_types FROM 'data/route_types.txt'"
-	$(psql) -f sql/constraints.sql
+	# $(psql) -f sql/constraints.sql
