@@ -39,14 +39,11 @@ CREATE TABLE feed_info (
   feed_id text default null,
   feed_contact_url text default null,
   feed_download_date date,
-  feed_file text,
-  feed_location_friendly text default null,
-  feed_lat double precision,
-  feed_lon double precision
+  feed_file text
 );
 
 CREATE TABLE agency (
-  feed_index integer REFERENCES feed_info (feed_index) ON DELETE CASCADE,
+  feed_index integer REFERENCES feed_info (feed_index),
   agency_id text default '',
   agency_name text default null,
   agency_url text default null,
@@ -176,15 +173,19 @@ CREATE TABLE routes (
   -- unofficial
   route_sort_order integer default null,
   CONSTRAINT routes_pkey PRIMARY KEY (feed_index, route_id),
-  CONSTRAINT routes_fkey FOREIGN KEY (feed_index, agency_id)
-    REFERENCES agency (feed_index, agency_id)
+  -- CONSTRAINT routes_fkey FOREIGN KEY (feed_index, agency_id)
+  --   REFERENCES agency (feed_index, agency_id),
+  CONSTRAINT routes_feed_fkey FOREIGN KEY (feed_index)
+    REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
 
 CREATE TABLE calendar_dates (
   feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
   service_id text,
   date date not null,
-  exception_type int REFERENCES exception_types(exception_type)
+  exception_type int REFERENCES exception_types(exception_type) --,
+  -- CONSTRAINT calendar_fkey FOREIGN KEY (feed_index, service_id)
+    -- REFERENCES calendar (feed_index, service_id)
 );
 
 CREATE INDEX calendar_dates_dateidx ON calendar_dates (date);
@@ -205,8 +206,10 @@ CREATE TABLE fare_attributes (
   -- unofficial features
   agency_id text default null,
   CONSTRAINT fare_attributes_pkey PRIMARY KEY (feed_index, fare_id),
-  CONSTRAINT fare_attributes_fkey FOREIGN KEY (feed_index, agency_id)
-  REFERENCES agency (feed_index, agency_id)
+  -- CONSTRAINT fare_attributes_fkey FOREIGN KEY (feed_index, agency_id)
+  -- REFERENCES agency (feed_index, agency_id),
+  CONSTRAINT fare_attributes_fare_fkey FOREIGN KEY (feed_index)
+    REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
 
 CREATE TABLE fare_rules (
@@ -218,12 +221,14 @@ CREATE TABLE fare_rules (
   contains_id text,
   -- unofficial features
   service_id text default null,
-  CONSTRAINT fare_rules_service_fkey FOREIGN KEY (feed_index, service_id)
-  REFERENCES calendar (feed_index, service_id),
-  CONSTRAINT fare_rules_fare_id_fkey FOREIGN KEY (feed_index, fare_id)
-  REFERENCES fare_attributes (feed_index, fare_id),
-  CONSTRAINT fare_rules_route_id_fkey FOREIGN KEY (feed_index, route_id)
-  REFERENCES routes (feed_index, route_id)
+  -- CONSTRAINT fare_rules_service_fkey FOREIGN KEY (feed_index, service_id)
+  -- REFERENCES calendar (feed_index, service_id),
+  -- CONSTRAINT fare_rules_fare_id_fkey FOREIGN KEY (feed_index, fare_id)
+  -- REFERENCES fare_attributes (feed_index, fare_id),
+  -- CONSTRAINT fare_rules_route_id_fkey FOREIGN KEY (feed_index, route_id)
+  -- REFERENCES routes (feed_index, route_id),
+  CONSTRAINT fare_rules_service_feed_fkey FOREIGN KEY (feed_index)
+    REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
 
 CREATE TABLE shapes (
@@ -295,12 +300,11 @@ CREATE TABLE trips (
   trip_type text default null,
   exceptional int default null,
   bikes_allowed int default null,
-  -- option foreign keys
   CONSTRAINT trips_pkey PRIMARY KEY (feed_index, trip_id),
-  CONSTRAINT trips_route_id_fkey FOREIGN KEY (feed_index, route_id)
-  REFERENCES routes (feed_index, route_id),
-  CONSTRAINT trips_calendar_fkey FOREIGN KEY (feed_index, service_id)
-  REFERENCES calendar (feed_index, service_id),
+  -- CONSTRAINT trips_route_id_fkey FOREIGN KEY (feed_index, route_id)
+  -- REFERENCES routes (feed_index, route_id),
+  -- CONSTRAINT trips_calendar_fkey FOREIGN KEY (feed_index, service_id)
+  -- REFERENCES calendar (feed_index, service_id),
   CONSTRAINT trips_feed_fkey FOREIGN KEY (feed_index)
     REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
@@ -334,10 +338,10 @@ CREATE TABLE stop_times (
   arrival_time_seconds int default null,
   departure_time_seconds int default null,
   CONSTRAINT stop_times_pkey PRIMARY KEY (feed_index, trip_id, stop_sequence),
-  CONSTRAINT stop_times_trips_fkey FOREIGN KEY (feed_index, trip_id)
-  REFERENCES trips (feed_index, trip_id),
-  CONSTRAINT stop_times_stops_fkey FOREIGN KEY (feed_index, stop_id)
-  REFERENCES stops (feed_index, stop_id),
+  -- CONSTRAINT stop_times_trips_fkey FOREIGN KEY (feed_index, trip_id)
+  -- REFERENCES trips (feed_index, trip_id),
+  -- CONSTRAINT stop_times_stops_fkey FOREIGN KEY (feed_index, stop_id)
+  -- REFERENCES stops (feed_index, stop_id),
   CONSTRAINT stop_times_feed_fkey FOREIGN KEY (feed_index)
     REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
@@ -435,8 +439,8 @@ CREATE TABLE frequencies (
   start_time_seconds int,
   end_time_seconds int,
   CONSTRAINT frequencies_pkey PRIMARY KEY (feed_index, trip_id, start_time),
-  CONSTRAINT frequencies_trip_fkey FOREIGN KEY (feed_index, trip_id)
-   REFERENCES trips (feed_index, trip_id),
+  -- CONSTRAINT frequencies_trip_fkey FOREIGN KEY (feed_index, trip_id)
+  --  REFERENCES trips (feed_index, trip_id),
   CONSTRAINT frequencies_feed_fkey FOREIGN KEY (feed_index)
     REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
@@ -451,16 +455,16 @@ CREATE TABLE transfers (
   from_route_id text default null,
   to_route_id text default null,
   service_id text default null,
-  CONSTRAINT transfers_from_stop_fkey FOREIGN KEY (feed_index, from_stop_id)
-   REFERENCES stops (feed_index, stop_id),
-  CONSTRAINT transfers_to_stop_fkey FOREIGN KEY (feed_index, to_stop_id)
-   REFERENCES stops (feed_index, stop_id),
-  CONSTRAINT transfers_from_route_fkey FOREIGN KEY (feed_index, from_route_id)
-   REFERENCES routes (feed_index, route_id),
-  CONSTRAINT transfers_to_route_fkey FOREIGN KEY (feed_index, to_route_id)
-   REFERENCES routes (feed_index, route_id),
-  CONSTRAINT transfers_service_fkey FOREIGN KEY (feed_index, service_id)
-   REFERENCES calendar (feed_index, service_id),
+  -- CONSTRAINT transfers_from_stop_fkey FOREIGN KEY (feed_index, from_stop_id)
+  --  REFERENCES stops (feed_index, stop_id),
+  --CONSTRAINT transfers_to_stop_fkey FOREIGN KEY (feed_index, to_stop_id)
+  --  REFERENCES stops (feed_index, stop_id),
+  --CONSTRAINT transfers_from_route_fkey FOREIGN KEY (feed_index, from_route_id)
+  --  REFERENCES routes (feed_index, route_id),
+  --CONSTRAINT transfers_to_route_fkey FOREIGN KEY (feed_index, to_route_id)
+  --  REFERENCES routes (feed_index, route_id),
+  --CONSTRAINT transfers_service_fkey FOREIGN KEY (feed_index, service_id)
+  --  REFERENCES calendar (feed_index, service_id),
   CONSTRAINT transfers_feed_fkey FOREIGN KEY (feed_index)
     REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
