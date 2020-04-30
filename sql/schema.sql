@@ -39,7 +39,10 @@ CREATE TABLE feed_info (
   feed_id text default null,
   feed_contact_url text default null,
   feed_download_date date,
-  feed_file text
+  feed_file text,
+  feed_location_friendly text default null,
+  feed_lat double precision,
+  feed_lon double precision
 );
 
 CREATE TABLE agency (
