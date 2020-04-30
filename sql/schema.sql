@@ -467,6 +467,12 @@ CREATE TABLE transfers (
     REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
 
+CREATE MATERIALIZED VIEW stop_times_with_next AS select 
+    t.*,
+    lead(stop_id) 
+        over(partition by trip_id, feed_index order by stop_sequence) next_stop_id
+from :schema.stop_times t;
+
 insert into exception_types (exception_type, description) values 
   (1, 'service has been added'),
   (2, 'service has been removed');
