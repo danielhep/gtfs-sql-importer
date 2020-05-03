@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE SCHEMA IF NOT EXISTS :schema;
 SET search_path to :schema, public;
 
@@ -118,6 +119,7 @@ CREATE INDEX calendar_service_id ON calendar (service_id);
 
 CREATE TABLE stops (
   feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
+  _id uuid DEFAULT uuid_generate_v4 (),
   stop_id text,
   stop_name text default null,
   stop_desc text default null,
@@ -164,6 +166,7 @@ CREATE TABLE route_types (
 
 CREATE TABLE routes (
   feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
+  _id uuid DEFAULT uuid_generate_v4 (),
   route_id text,
   agency_id text,
   route_short_name text default '',
