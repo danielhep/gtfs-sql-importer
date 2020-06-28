@@ -6,6 +6,8 @@ TABLES = stop_times trips routes \
 	transfers frequencies \
 	fare_attributes fare_rules agency feed_info
 
+include .env
+
 PGUSER ?= $(USER)
 PGDATABASE ?= $(PGUSER)
 SCHEMA = gtfs
