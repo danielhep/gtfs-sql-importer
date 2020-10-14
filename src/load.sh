@@ -60,3 +60,5 @@ if [ -n "$ADD_DATES" ]; then
 else
     psql -c "UPDATE ${SCHEMA}.feed_info SET feed_file ='${ZIP}' WHERE feed_index = ${feed_index}"
 fi
+
+psql -c "REFRESH MATERIALIZED VIEW gtfs.stop_times_with_next"

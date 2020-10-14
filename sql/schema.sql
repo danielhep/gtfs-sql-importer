@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE SCHEMA IF NOT EXISTS :schema;
 SET search_path to :schema, public;
 
@@ -39,7 +40,10 @@ CREATE TABLE feed_info (
   feed_id text default null,
   feed_contact_url text default null,
   feed_download_date date,
-  feed_file text
+  feed_file text,
+  feed_location_friendly text default null,
+  feed_lat double precision,
+  feed_lon double precision
 );
 
 CREATE TABLE agency (
@@ -115,6 +119,7 @@ CREATE INDEX calendar_service_id ON calendar (service_id);
 
 CREATE TABLE stops (
   feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
+  _id uuid DEFAULT uuid_generate_v4 (),
   stop_id text,
   stop_name text default null,
   stop_desc text default null,
@@ -161,6 +166,7 @@ CREATE TABLE route_types (
 
 CREATE TABLE routes (
   feed_index int REFERENCES feed_info (feed_index) ON DELETE CASCADE,
+  _id uuid DEFAULT uuid_generate_v4 (),
   route_id text,
   agency_id text,
   route_short_name text default '',
@@ -492,6 +498,12 @@ CREATE TABLE transfers (
   CONSTRAINT transfers_feed_fkey FOREIGN KEY (feed_index)
     REFERENCES feed_info (feed_index) ON DELETE CASCADE
 );
+
+CREATE MATERIALIZED VIEW stop_times_with_next AS select 
+    t.*,
+    lead(stop_id) 
+        over(partition by trip_id, feed_index order by stop_sequence) next_stop_id
+from :schema.stop_times t;
 
 insert into exception_types (exception_type, description) values 
   (1, 'service has been added'),
